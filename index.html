@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetris</title>
+  <style>
+    body {
+      font-family: 'Press Start 2P', sans-serif;
+      background-color: #1a1a2e;
+    }
+    #game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #gameCanvas {
+      border: 2px solid #39ff14;
+      max-width: 100%;
+    }
+    #controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .control-button {
+      border-radius: 10px;
+      padding: 10px;
+      border: none;
+      background-color: #333;
+      color: #fff;
+      cursor: pointer;
+    }
+    .control-button:hover {
+      background-color: #444;
+    }
+    #score-display {
+      font-size: 24px;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="score-display">Puntuación: 0</div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="controls">
+      <button class="control-button" id="up-button">↑</button>
+      <button class="control-button" id="left-button">←</button>
+      <button class="control-button" id="right-button">→</button>
+      <button class="control-button" id="down-button">↓</button>
+    </div>
+  </div>
+  <script>
+    const CELL = 20, COLS = 20, ROWS = 20;
+    let snake, dir, nextDir, food, score, speed, gameState, animId;
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score-display');
+    const upButton = document.getElementById('up-button');
+    const downButton = document.getElementById('down-button');
+    const leftButton = document.getElementById('left-button');
+    const rightButton = document.getElementById('right-button');
+
+    function resetGame() {
+      snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+      dir = {x:1,y:0}; nextDir = {x:1,y:0};
+      score = 0; speed = 150; gameState = 'start';
+      spawnFood(); cancelAnimationFrame(animId);
+    }
+
+    function spawnFood() {
+      do { food = {x:Math.floor(Math.random()*COLS), y:Math.floor(Math.random()*ROWS)}; }
+      while (snake.some(s=>s.x===food.x&&s.y===food.y));
+    }
+
+    let lastTime = 0;
+    function loop(ts) {
+      animId = requestAnimationFrame(loop);
+      if (ts - lastTime < speed) return;
+      lastTime = ts;
+      dir = nextDir;
+      const head = {x: snake[0].x+dir.x, y: snake[0].y+dir.y};
+      if (head.x<0||head.x>=COLS||head.y<0||head.y>=ROWS||snake.some(s=>s.x===head.x&&s.y===head.y)) {
+        gameState='gameover'; drawGameOver(); return;
+      }
+      snake.unshift(head);
+      if (head.x===food.x&&head.y===food.y) { score+=10; speed=Math.max(60,speed-2); spawnFood(); }
+      else snake.pop();
+      draw();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < snake.length; i++) {
+        const s = snake[i];
+        ctx.fillStyle = `hsl(${i * 10}, 100%, 50%)`;
+        ctx.fillRect(s.x * CELL, s.y * CELL, CELL, CELL);
+      }
+      ctx.fillStyle = 'red';
+      ctx.beginPath();
+      ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL / 2, 0, 2 * Math.PI);
+      ctx.fill();
+      scoreDisplay.textContent = `Puntuación: ${score}`;
+    }
+
+    function drawGameOver() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.font = '24px Press Start 2P';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`Game Over! Puntuación: ${score}`, canvas.width / 2, canvas.height / 2);
+      ctx.font = '18px Press Start 2P';
+      ctx.fillText('Presiona el botón de reiniciar', canvas.width / 2, canvas.height / 2 + 30);
+      const restartButton = document.createElement('button');
+      restartButton.textContent = '🔄 Reiniciar';
+      restartButton.style.position = 'absolute';
+      restartButton.style.top = '50%';
+      restartButton.style.left = '50%';
+      restartButton.style.transform = 'translate(-50%, -50%)';
+      restartButton.style.borderRadius = '10px';
+      restartButton.style.padding = '10px';
+      restartButton.style.border = 'none';
+      restartButton.style.backgroundColor = '#333';
+      restartButton.style.color = '#fff';
+      restartButton.style.cursor = 'pointer';
+      restartButton.onclick = resetGame;
+      document.body.appendChild(restartButton);
+    }
+
+    function drawStartScreen() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.font = '24px Press Start 2P';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Tetris', canvas.width / 2, canvas.height / 2);
+      ctx.font = '18px Press Start 2P';
+      ctx.fillText('Presiona el botón de iniciar', canvas.width / 2, canvas.height / 2 + 30);
+      const startButton = document.createElement('button');
+      startButton.textContent = '▶ Iniciar';
+      startButton.style.position = 'absolute';
+      startButton.style.top = '50%';
+      startButton.style.left = '50%';
+      startButton.style.transform = 'translate(-50%, -50%)';
+      startButton.style.borderRadius = '10px';
+      startButton.style.padding = '10px';
+      startButton.style.border = 'none';
+      startButton.style.backgroundColor = '#333';
+      startButton.style.color = '#fff';
+      startButton.style.cursor = 'pointer';
+      startButton.onclick = function() {
+        resetGame();
+        loop();
+        document.body.removeChild(startButton);
+      };
+      document.body.appendChild(startButton);
+    }
+
+    upButton.addEventListener('click', () => nextDir = {x: 0, y: -1});
+    downButton.addEventListener('click', () => nextDir = {x: 0, y: 1});
+    leftButton.addEventListener('click', () => nextDir = {x: -1, y: 0});
+    rightButton.addEventListener('click', () => nextDir = {x: 1, y: 0});
+
+    document.addEventListener('keydown', (e) => {
+      switch (e.key) {
+        case 'ArrowUp':
+          nextDir = {x: 0, y: -1};
+          break;
+        case 'ArrowDown':
+          nextDir = {x: 0, y: 1};
+          break;
+        case 'ArrowLeft':
+          nextDir = {x: -1, y: 0};
+          break;
+        case 'ArrowRight':
+          nextDir = {x: 1, y: 0};
+          break;
+        case 'w':
+          nextDir = {x: 0, y: -1};
+          break;
+        case 's':
+          nextDir = {x: 0, y: 1};
+          break;
+        case 'a':
+          nextDir = {x: -1, y: 0};
+          break;
+        case 'd':
+          nextDir = {x: 1, y: 0};
+          break;
+      }
+    });
+
+    drawStartScreen();
+  </script>
+</body>
+</html>
