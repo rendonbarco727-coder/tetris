@@ -13,6 +13,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      max-width: 400px;
+      margin: 40px auto;
     }
     #gameCanvas {
       border: 2px solid #39ff14;
@@ -26,8 +28,8 @@
     }
     .btn {
       padding: 10px;
-      border-radius: 10px;
       border: none;
+      border-radius: 10px;
       background-color: #333;
       color: #fff;
       cursor: pointer;
@@ -41,21 +43,19 @@
       margin-bottom: 10px;
     }
   </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="game-container">
     <div id="score-display">Puntuación: 0</div>
     <canvas id="gameCanvas" width="400" height="400"></canvas>
     <div id="controls">
-      <div></div>
       <button class="btn" id="up-btn">↑</button>
-      <div></div>
       <button class="btn" id="left-btn">←</button>
-      <div></div>
       <button class="btn" id="right-btn">→</button>
-      <div></div>
       <button class="btn" id="down-btn">↓</button>
-      <div></div>
     </div>
   </div>
   <script>
@@ -65,9 +65,9 @@
     const ctx = canvas.getContext('2d');
     const scoreDisplay = document.getElementById('score-display');
     const upBtn = document.getElementById('up-btn');
+    const downBtn = document.getElementById('down-btn');
     const leftBtn = document.getElementById('left-btn');
     const rightBtn = document.getElementById('right-btn');
-    const downBtn = document.getElementById('down-btn');
 
     function resetGame() {
       snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
@@ -99,43 +99,54 @@
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#1a1a2e';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
       if (gameState === 'start') {
-        ctx.font = '48px Press Start 2P';
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('Tetris', canvas.width / 2, canvas.height / 2);
-        ctx.font = '24px Press Start 2P';
-        ctx.fillText('Toca para iniciar', canvas.width / 2, canvas.height / 2 + 50);
+        drawStartScreen();
       } else if (gameState === 'gameover') {
         drawGameOver();
       } else {
-        ctx.fillStyle = '#0f0';
-        for (let i = 0; i < snake.length; i++) {
-          ctx.fillRect(snake[i].x * CELL, snake[i].y * CELL, CELL, CELL);
-        }
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        snake.forEach((s, i) => {
+          const gradient = ctx.createLinearGradient(s.x*CELL, s.y*CELL, (s.x+1)*CELL, (s.y+1)*CELL);
+          gradient.addColorStop(0, '#0f0');
+          gradient.addColorStop(1, '#3f3');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(s.x*CELL, s.y*CELL, CELL, CELL);
+        });
         ctx.fillStyle = '#f00';
         ctx.beginPath();
-        ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL / 2, 0, 2 * Math.PI);
+        ctx.arc(food.x*CELL+CELL/2, food.y*CELL+CELL/2, CELL/2, 0, 2*Math.PI);
         ctx.fill();
+        scoreDisplay.textContent = `Puntuación: ${score}`;
       }
-      scoreDisplay.textContent = `Puntuación: ${score}`;
+    }
+
+    function drawStartScreen() {
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.font = '48px Press Start 2P';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Tetris', canvas.width/2, canvas.height/2-50);
+      ctx.font = '24px Press Start 2P';
+      ctx.fillText('Toca para iniciar', canvas.width/2, canvas.height/2+50);
     }
 
     function drawGameOver() {
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.font = '48px Press Start 2P';
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2);
+      ctx.fillText('Game Over', canvas.width/2, canvas.height/2-50);
       ctx.font = '24px Press Start 2P';
-      ctx.fillText(`Puntuación: ${score}`, canvas.width / 2, canvas.height / 2 + 50);
+      ctx.fillText(`Puntuación: ${score}`, canvas.width/2, canvas.height/2);
       ctx.font = '24px Press Start 2P';
-      ctx.fillText('🔄 Reiniciar', canvas.width / 2, canvas.height / 2 + 100);
+      ctx.fillText('🔄 Reiniciar', canvas.width/2, canvas.height/2+50);
       canvas.addEventListener('click', () => {
         resetGame();
         loop();
@@ -144,22 +155,22 @@
 
     upBtn.addEventListener('click', () => {
       if (gameState !== 'gameover') {
-        nextDir = {x: 0, y: -1};
-      }
-    });
-    leftBtn.addEventListener('click', () => {
-      if (gameState !== 'gameover') {
-        nextDir = {x: -1, y: 0};
-      }
-    });
-    rightBtn.addEventListener('click', () => {
-      if (gameState !== 'gameover') {
-        nextDir = {x: 1, y: 0};
+        nextDir = {x:0,y:-1};
       }
     });
     downBtn.addEventListener('click', () => {
       if (gameState !== 'gameover') {
-        nextDir = {x: 0, y: 1};
+        nextDir = {x:0,y:1};
+      }
+    });
+    leftBtn.addEventListener('click', () => {
+      if (gameState !== 'gameover') {
+        nextDir = {x:-1,y:0};
+      }
+    });
+    rightBtn.addEventListener('click', () => {
+      if (gameState !== 'gameover') {
+        nextDir = {x:1,y:0};
       }
     });
 
@@ -167,42 +178,40 @@
       if (gameState !== 'gameover') {
         switch (e.key) {
           case 'ArrowUp':
-            nextDir = {x: 0, y: -1};
-            break;
-          case 'ArrowLeft':
-            nextDir = {x: -1, y: 0};
-            break;
-          case 'ArrowRight':
-            nextDir = {x: 1, y: 0};
+            nextDir = {x:0,y:-1};
             break;
           case 'ArrowDown':
-            nextDir = {x: 0, y: 1};
+            nextDir = {x:0,y:1};
+            break;
+          case 'ArrowLeft':
+            nextDir = {x:-1,y:0};
+            break;
+          case 'ArrowRight':
+            nextDir = {x:1,y:0};
             break;
           case 'w':
-            nextDir = {x: 0, y: -1};
-            break;
-          case 'a':
-            nextDir = {x: -1, y: 0};
-            break;
-          case 'd':
-            nextDir = {x: 1, y: 0};
+            nextDir = {x:0,y:-1};
             break;
           case 's':
-            nextDir = {x: 0, y: 1};
+            nextDir = {x:0,y:1};
+            break;
+          case 'a':
+            nextDir = {x:-1,y:0};
+            break;
+          case 'd':
+            nextDir = {x:1,y:0};
             break;
         }
       }
     });
 
+    resetGame();
+    drawStartScreen();
     canvas.addEventListener('click', () => {
       if (gameState === 'start') {
-        resetGame();
         loop();
       }
     });
-
-    resetGame();
-    draw();
   </script>
 </body>
 </html>
